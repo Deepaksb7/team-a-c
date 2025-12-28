@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import React from 'react'
 
 const Home = () => {
     const user = false
@@ -29,10 +28,10 @@ const Home = () => {
                         User Roles
                     </h3>
                     <ul className='list-disc list-inside space-y-1 text-sm text-slate-300'>
-                        <li><strong className='text-purple-400'>Super Admin:</strong>Full system access</li>
-                        <li><strong className='text-green-400'>Admin:</strong>User & team management</li>
-                        <li><strong className='text-yellow-400'>Manager</strong>Team specific management</li>
-                        <li><strong className='text-blue-400'>User</strong>Basic dashboard</li>
+                        <li><strong className='text-purple-400'>Super Admin:</strong> Full system access</li>
+                        <li><strong className='text-green-400'>Admin:</strong> User & team management</li>
+                        <li><strong className='text-yellow-400'>Manager:</strong> Team specific management</li>
+                        <li><strong className='text-blue-400'>User:</strong> Basic dashboard</li>
                     </ul>
                 </div>
             </div>
@@ -56,7 +55,6 @@ const Home = () => {
                     <Link href="/register" className='inline-block mt-3 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
                     Register
                     </Link>
-
                     </div>
                 </div>
             )}
