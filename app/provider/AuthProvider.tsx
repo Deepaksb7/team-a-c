@@ -1,6 +1,6 @@
 "use client"
-import { createContext, ReactNode, useActionState, useState } from "react";
-import { AuthContextType, User } from "../types";
+import { createContext, ReactNode, useActionState, useContext, useEffect, useState } from "react";
+import { AuthContextType, Role, User } from "../types";
 import { apiClient } from "../lib/apiClient";
 
 type LoginState ={
@@ -23,7 +23,7 @@ export const AuthProvider = ({children}:{children: ReactNode})=>{
             const password = formData.get("password") as string
 
             try {
-                const data = await apiClient.login(email,password)
+                const data = await apiClient.login(email,password) as unknown as {user: User}
                 setUser(data.user)
                 return {success:true,user:data.user}
             } catch (error) {
@@ -34,11 +34,45 @@ export const AuthProvider = ({children}:{children: ReactNode})=>{
             }
         },
         {success:undefined, user:undefined, error: undefined} as LoginState)
+
+    const logout = async ()=>{
+        try {
+            await apiClient.logout()
+            setUser(null)
+            window.location.href = "/"
+        } catch (error) {
+            console.error("Logout error: ",error)
+        }
+    }
+
+    const hasPermission = (requiredRole: Role) : boolean => {
+        if(!user) return false
+        const roleHierarchy = {
+            [Role.GUEST]:0,
+            [Role.USER]:1,
+            [Role.MANAGER]:2,
+            [Role.ADMIN]:3,
+        }
+        return roleHierarchy[user.role] >= roleHierarchy[requiredRole]
+    }
+
+    useEffect(()=>{
+        const loadUser = async ()=>{
+            try {
+                const userData = await apiClient.getCurrentUser()
+                setUser(userData || null)
+            } catch (error) {
+                console.error("Failed to load user: ",error)
+            }
+        }
+        loadUser()
+    },[])
+
     return (
         <AuthContext.Provider
             value={{
                 user,
-                login,
+                login : loginAction,
                 logout,
                 hasPermission
             }}
@@ -47,3 +81,13 @@ export const AuthProvider = ({children}:{children: ReactNode})=>{
         </AuthContext.Provider>
     )
 }
+
+export const useAuth = ()=>{
+    const context = useContext(AuthContext)
+    if (context === undefined){
+        throw new Error(`useAuth must be used within an AuthProvider`)
+    }
+    return context
+}
+
+export default AuthProvider
