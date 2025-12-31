@@ -1,5 +1,7 @@
+import UserDashboard from "@/app/components/dashboard/UserDashboard"
 import { getCurrentUser } from "@/app/lib/auth"
 import { prisma } from "@/app/lib/db"
+import { User } from "@/app/types"
 import { redirect } from "next/navigation"
 
 const UserPage = async () =>{
@@ -9,7 +11,7 @@ const UserPage = async () =>{
     }
 
     const teamMembers = user.teamId ?
-        prisma.user.findMany({
+    await prisma.user.findMany({
             where:{
                 teamId: user.teamId,
             },
@@ -24,7 +26,7 @@ const UserPage = async () =>{
     
     return (
         <UserDashboard 
-            teamMembers={teamMembers}
+            teamMembers={teamMembers as User[]}
             currentUser={user}
         />
     )
