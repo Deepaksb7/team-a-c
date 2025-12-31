@@ -21,7 +21,6 @@ export const AuthProvider = ({children}:{children: ReactNode})=>{
         ):Promise<LoginState>=>{
             const email = formData.get("email") as string
             const password = formData.get("password") as string
-
             try {
                 const data = await apiClient.login(email,password) as unknown as {user: User}
                 setUser(data.user)

@@ -4,19 +4,19 @@ import { apiClient } from "@/app/lib/apiClient"
 import { Role, Team, User } from "@/app/types"
 import { useTransition } from "react"
 
-interface AdminDashboardProps{
+interface AdminDashboardProps {
     users: User[],
     teams: Team[],
     currentUser: User
 }
 
-const AdminDashboard = ({users,teams,currentUser}: AdminDashboardProps)=>{
-    const [isPending,startTransition] = useTransition()
-    
-    const handleTeamAssignment = async (userId:string, teamId:string)=>{
-        startTransition( async ()=>{
+const AdminDashboard = ({ users, teams, currentUser }: AdminDashboardProps) => {
+    const [isPending, startTransition] = useTransition()
+
+    const handleTeamAssignment = async (userId: string, teamId: string | null) => {
+        startTransition(async () => {
             try {
-                await apiClient.assignUserToTeam(userId,teamId)
+                await apiClient.assignUserToTeam(userId, teamId)
                 window.location.reload()
             } catch (error) {
                 alert(error instanceof Error ? error.message : "Error updating team assignment")
@@ -24,14 +24,14 @@ const AdminDashboard = ({users,teams,currentUser}: AdminDashboardProps)=>{
         })
     }
 
-    const handleRoleAssignment = async (userId:string, newRole:Role)=>{
-        if (userId  === currentUser.id){
+    const handleRoleAssignment = async (userId: string, newRole: Role) => {
+        if (userId === currentUser.id) {
             alert("You can't change your own role")
             return
         }
-        startTransition( async ()=>{
+        startTransition(async () => {
             try {
-                await apiClient.updateUserRole(userId,newRole)
+                await apiClient.updateUserRole(userId, newRole)
                 window.location.reload()
             } catch (error) {
                 alert(error instanceof Error ? error.message : "Error updating team assignment")
@@ -61,7 +61,7 @@ const AdminDashboard = ({users,teams,currentUser}: AdminDashboardProps)=>{
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map((user)=>(
+                            {users.map((user) => (
                                 <tr key={user.id} className="border-b border-slate-700">
                                     <td className="py-2 text-slate-300">
                                         <div className="flex items-center space-x-2">
@@ -75,18 +75,136 @@ const AdminDashboard = ({users,teams,currentUser}: AdminDashboardProps)=>{
                                         </div>
                                     </td>
                                     <td className="py-2">
-                                        <select value={user.role} onChange={(e)=> handleRoleAssignment(user.id,e.target.value as Role)} disabled={isPending || user.id === currentUser.id}
-                                            className="bg-slate-900 border border-slate-700 rounded">
-                                                <option value={Role.USER}>USER</option>
-                                                <option value={Role.ADMIN}>ADMIN</option>
-                                                <option value={Role.MANAGER}>MANAGER</option>
-
+                                        <select value={user.role} onChange={(e) => handleRoleAssignment(user.id, e.target.value as Role)} disabled={isPending || user.id === currentUser.id}
+                                            className="bg-slate-900 border border-slate-700 rounded px-2 py-1">
+                                            <option value={Role.USER}>USER</option>
+                                            <option value={Role.ADMIN}>ADMIN</option>
+                                            <option value={Role.MANAGER}>MANAGER</option>
                                         </select>
+                                    </td>
+                                    <td className="py-2">
+                                        <div className="flex items-center space-x-2">
+                                        <select value={user.teamId || ""} onChange={(e) => handleTeamAssignment(user.id, e.target.value || null)} disabled={isPending}
+                                            className="bg-slate-900 border border-slate-700 rounded px-2 py-1">
+                                            <option value="">No Team</option>
+                                            {teams.map((team)=>(
+                                                <option key={team.id} value={team.id}>{team.name}</option>
+                                            ))}
+                                        </select>
+                                        {user.team && (
+                                            <span className="text-xs text-slate-500">{user.team.code}</span>
+                                        )}
+
+                                        </div>
+                                    </td>
+                                    <td className="py-2">
+                                        {user.teamId && (
+                                            <button onClick={()=> handleTeamAssignment(user.id,null)} disabled={isPending} className="text-red-400 hover:text-red-300 text-xs disabled:opacity-0" >
+                                                Remove
+                                            </button>
+                                        )}
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                </div>
+            </div>
+            <div className="bg-slate-800 border border-slate-700 rounded-lg">
+                <div className="p-4 border-b border-slate-700">
+                    <h3 className="font-semibold text-white">Teams ({teams.length})</h3>
+                    <p className="text-slate-400 text-sm">
+                        Team Overview
+                    </p>
+                </div>
+                <div className="p-4">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b border-slate-700">
+                                <th className="text-left py-2 border-slate-300">Name</th>
+                                <th className="text-left py-2 border-slate-300">Code</th>
+                                <th className="text-left py-2 border-slate-300">Members</th>
+                                <th className="text-left py-2 border-slate-300">Managers</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {teams.map((team)=>{
+                                const teamMembers = users.filter((user) => user.teamId === team.id);
+                                const teamManagers = teamMembers.filter((user) => user.role === Role.MANAGER);
+
+                                return(
+                                    <tr key={team.id} className="border-b border-slate-700">
+                                        <td className="py-2 text-slate-300 font-medium">
+                                            {team.name}
+                                        </td>
+                                        <td className="py-2">
+                                            <span className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded">{team.code}</span>
+                                        </td>
+                                        <td className="py-2 text-slate-300">
+                                            {teamMembers.length} users
+                                        </td>
+                                        <td className="py-2 text-slate-300">
+                                            {teamManagers.length > 0 ? (
+                                                <div className="flex flex-wrap">
+                                                    {teamManagers.map((manager)=>(
+                                                        <span key={manager.id} className="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs" title={manager.name}>
+                                                            {manager.name}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ):(
+                                                <span className="text-slate-500 text-xs">No Manager</span>
+                                            )} 
+                                        </td>
+                                    </tr>
+                                )
+
+                            })}
+                            
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-white">
+                    {users.length}
+                </div>
+                <div className="text-sm text-slate-400">
+                    Total Users
+                </div>
+            </div>
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-white">
+                    {users.filter((u)=> u.role === Role.ADMIN).length}
+                </div>
+                <div className="text-sm text-slate-400">
+                    Admins
+                </div>
+            </div>
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-white">
+                    {users.filter((u)=> u.role === Role.MANAGER).length}
+                </div>
+                <div className="text-sm text-slate-400">
+                    Managers
+                </div>
+            </div>
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-white">
+                    {users.filter((u)=> u.role === Role.USER).length}
+                </div>
+                <div className="text-sm text-slate-400">
+                    Users
+                </div>
+            </div>
+            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold text-white">
+                    {teams.length}
+                </div>
+                <div className="text-sm text-slate-400">
+                    Teams
                 </div>
             </div>
         </div>
